@@ -7,6 +7,7 @@
 
 int main (int argc, char** argv)
 {
+    ppm_init_logger(stderr);
     struct ppm_image image = ppm_create(P3, "Test image", 2, 2, 255);
     const char* filepath = "E:\\Projekty\\img_prot\\build\\file.ppm";
     image.set_filepath(&image, filepath);

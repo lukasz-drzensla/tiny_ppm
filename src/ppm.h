@@ -6,11 +6,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+void ppm_init_logger(void *restrict _logger_stream);
+
 typedef enum PPM_STATUS_t {
     PPM_OK = 0,
     PPM_ERR_IO = 1,
     PPM_ERR_PARAM = 2,
-    PPM_ERR_GEN = 3
+    PPM_ERR_GEN = 3,
+    PPM_NOT_INIT = 4
 } PPM_STATUS_t;
 
 /*DO NOT change these parameters*/
@@ -48,9 +51,9 @@ struct ppm_image{
     uint16_t height; /*5*/
     uint16_t maxval; /*7*/
     struct ppm_pixel** raster; /*9*/
-    
     /*End of specification section*/
 
+    unsigned char _initialised;
     char filepath[FILEPATH_MAX_LEN];
 
     PPM_STATUS_t (*set_filepath)(struct ppm_image* ppm_image, const char* filepath);
