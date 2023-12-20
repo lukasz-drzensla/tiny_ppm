@@ -87,6 +87,6 @@ struct ppm_image{
 };
 
 struct ppm_image ppm_create(const ppm_magic magic_numer, const char* initial_comment, const uint16_t width, const uint16_t height, const uint16_t maxval);
-struct ppm_image ppm_create_empty();
+struct ppm_image ppm_create_empty(void);
 
 #endif /* _PPM_H */

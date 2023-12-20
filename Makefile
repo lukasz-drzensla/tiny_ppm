@@ -15,8 +15,9 @@ ifeq ($(PLATFORM), linux)
 endif
 
 ifeq ($(PLATFORM), windows)
-	CC = gcc
+	CC = clang
 	APP = $(BUILD_DIR)/ppm.exe
+	CFLAGS += -D_CRT_SECURE_NO_WARNINGS
 endif
 
 SRC_DIR = src

@@ -18,7 +18,7 @@ void _ppm_init(struct ppm_image *ppm_image);
 
 FILE *logger_stream = NULL;
 
-inline void ppm_init_logger(void *restrict _logger_stream)
+void ppm_init_logger(void *restrict _logger_stream)
 {
     logger_stream = (FILE *)_logger_stream;
 }
@@ -65,7 +65,7 @@ struct ppm_image ppm_create(const ppm_magic magic_numer, const char *initial_com
     return image;
 }
 
-struct ppm_image ppm_create_empty()
+struct ppm_image ppm_create_empty(void)
 {
     struct ppm_image image;
     image.magic_number = P6;
