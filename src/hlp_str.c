@@ -1,3 +1,7 @@
+/* 
+* Copyright (C) 2023  Lukasz Drzensla
+*/
+
 #include "ppm.h"
 #include "hlp_ppm.h"
 

@@ -1,3 +1,5 @@
+# Copyright (C) 2023  Lukasz Drzensla
+
 PLATFORM ?= windows
 
 CC =
@@ -9,7 +11,7 @@ CCOPTS = -g -Wall -std=c++20
 
 ifeq ($(PLATFORM), linux)
 	$(CC) = gcc
-	$(APP) = = $(BUILD_DIR)/ppm
+	$(APP) = $(BUILD_DIR)/ppm
 endif
 
 ifeq ($(PLATFORM), windows)
@@ -21,7 +23,16 @@ SRC_DIR = src
 BUILD_DIR = build
 LIB_DIR = lib
 
+#main library objects, main.o to be moved
 OBJECTS = $(BUILD_DIR)/main.o $(BUILD_DIR)/ppm.o $(BUILD_DIR)/hlp_str.o
+
+#additional functionality
+FILTERS ?= yes
+
+ifeq ($(FILTERS), yes)
+	OBJECTS += $(BUILD_DIR)/ppm_filters.o
+endif
+
 APP_OPT = -DDBG
 
 LIB = $(BUILD_DIR)/LIB

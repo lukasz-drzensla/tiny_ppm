@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2023  Lukasz Drzensla
+ */
+
 #include "ppm.h"
 #include "hlp_str.h"
 #include "hlp_ppm.h"
@@ -5,10 +9,8 @@
 PPM_STATUS_t ppm_set_filepath(struct ppm_image *ppm_image, const char *filepath);
 PPM_STATUS_t ppm_destroy_raster(struct ppm_image *ppm_image);
 PPM_STATUS_t ppm_init_raster(struct ppm_image *ppm_image);
-PPM_STATUS_t ppm_save_to_buffer(struct ppm_image *ppm_image, char *dest_buffer);
 PPM_STATUS_t ppm_save_to_file(struct ppm_image *ppm_image);
 PPM_STATUS_t ppm_set_pixel(struct ppm_image *ppm_image, const int row, const int col, const uint16_t red, const uint16_t green, const uint16_t blue);
-PPM_STATUS_t ppm_load_from_buffer(struct ppm_image *ppm_image, char *buffer);
 PPM_STATUS_t ppm_load_from_file(struct ppm_image *ppm_image);
 
 struct ppm_pixel **ppm_create_raster(struct ppm_image *ppm_image);
@@ -27,10 +29,8 @@ inline void _ppm_init(struct ppm_image *ppm_image)
     ppm_image->set_filepath = &ppm_set_filepath;
     ppm_image->destroy_raster = &ppm_destroy_raster;
     ppm_image->init_raster = &ppm_init_raster;
-    ppm_image->create_buffer = &ppm_save_to_buffer;
     ppm_image->save_to_file = &ppm_save_to_file;
     ppm_image->set_pixel = &ppm_set_pixel;
-    ppm_image->load_from_buffer = &ppm_load_from_buffer;
     ppm_image->load_from_file = &ppm_load_from_file;
 }
 
@@ -59,6 +59,21 @@ struct ppm_image ppm_create(const ppm_magic magic_numer, const char *initial_com
     image.width = width;
     image.height = height;
     image.maxval = maxval;
+
+    _ppm_init(&image);
+
+    return image;
+}
+
+struct ppm_image ppm_create_empty()
+{
+    struct ppm_image image;
+    image.magic_number = P6;
+    const char *initial_comment = "Created by Tiny PPM";
+    strncpy(image.initial_comment, initial_comment, strlen(initial_comment) + 1);
+    image.width = 1;
+    image.height = 1;
+    image.maxval = 255;
 
     _ppm_init(&image);
 
@@ -117,61 +132,10 @@ struct ppm_pixel **ppm_create_raster(struct ppm_image *ppm_image)
     return raster;
 }
 
-PPM_STATUS_t ppm_load_from_buffer(struct ppm_image *ppm_image, char *buffer)
-{
-    PPM_STATUS_t destroy_res = ppm_image->destroy_raster(ppm_image); /*width and height CAN change thus we need to free allocated memory beforehand*/
-    if (destroy_res != PPM_OK || destroy_res != PPM_NOT_INIT)
-    {
-        return destroy_res;
-    }
-
-    _remove_comments(buffer);
-    _replace_all_whitespaces(buffer, COMMENT_CHAR);
-    _replace_consecutive_with_single_another(buffer, COMMENT_CHAR, WHITESPACE);
-
-    if ('P' != buffer[0])
-    {
-        return PPM_ERR_PARAM;
-    }
-
-    if ('3' == buffer[1])
-    {
-        /*P3 version = ascii ppm*/
-        ppm_image->magic_number = P3;
-    }
-    else if ('6' == buffer[1])
-    {
-        /*P6 version*/
-        ppm_image->magic_number = P6;
-    }
-    else
-    {
-        return PPM_ERR_PARAM;
-    }
-    int cursor = 3;
-    cursor += _get_next(buffer + cursor, &(ppm_image->width)) + 1;  /*read width*/
-    cursor += _get_next(buffer + cursor, &(ppm_image->height)) + 1; /*read height*/
-    cursor += _get_next(buffer + cursor, &(ppm_image->maxval)) + 1; /*read maxval*/
-
-    ppm_image->init_raster(ppm_image);
-
-    for (int row = 0; row < ppm_image->height; row++)
-    {
-        for (int col = 0; col < ppm_image->width; col++)
-        {
-            cursor += _get_next(buffer + cursor, &(ppm_image->raster[row][col].red)) + 1;   /*read red*/
-            cursor += _get_next(buffer + cursor, &(ppm_image->raster[row][col].green)) + 1; /*read green*/
-            cursor += _get_next(buffer + cursor, &(ppm_image->raster[row][col].blue)) + 1;  /*read blue*/
-        }
-    }
-
-    return PPM_OK;
-}
-
 PPM_STATUS_t ppm_load_from_file(struct ppm_image *ppm_image)
 {
     PPM_STATUS_t destroy_res = ppm_image->destroy_raster(ppm_image); /*width and height CAN change thus we need to free allocated memory beforehand*/
-    if (destroy_res != PPM_OK || destroy_res != PPM_NOT_INIT)
+    if (destroy_res != PPM_OK && destroy_res != PPM_NOT_INIT)
     {
         return destroy_res;
     }
@@ -203,6 +167,13 @@ PPM_STATUS_t ppm_load_from_file(struct ppm_image *ppm_image)
         return PPM_ERR_PARAM;
     }
 
+    if (P6 == ppm_image->magic_number)
+    {
+        fclose(ppm_file);
+        ppm_file = fopen(ppm_image->filepath, "rb");
+        fgets(buffer, LINE_MAX_LEN, ppm_file);
+    }
+
     /*parse (ignore) initial comment*/
     fgets(buffer, LINE_MAX_LEN, ppm_file);
     if (COMMENT_CHAR == buffer[0])
@@ -215,110 +186,112 @@ PPM_STATUS_t ppm_load_from_file(struct ppm_image *ppm_image)
     _get_next(buffer + cursor, &(ppm_image->height));              /*read height*/
     fgets(buffer, LINE_MAX_LEN, ppm_file);
     _get_next(buffer, &(ppm_image->maxval)); /*read maxval*/
-    
+
     if (PPM_OK != ppm_image->init_raster(ppm_image))
     {
         return PPM_ERR_GEN;
     }
 
-    int i = 0;
-    int row = 0;
-    int col = 0;
-    while (fgets(buffer, LINE_MAX_LEN, ppm_file))
+    if (P3 == ppm_image->magic_number)
     {
-        if (ppm_image->width == col)
+        int i = 0;
+        int row = 0;
+        int col = 0;
+        while (fscanf(ppm_file, "%s", buffer) > 0)
         {
-            col = 0;
-            row++;
+            if (ppm_image->width == col)
+            {
+                col = 0;
+                row++;
+            }
+            switch (i)
+            {
+            case 0:
+            {
+                _get_next(buffer, &(ppm_image->raster[row][col].red));
+                break;
+            }
+            case 1:
+            {
+                _get_next(buffer, &(ppm_image->raster[row][col].green));
+                break;
+            }
+            case 2:
+            {
+                i = -1;
+                _get_next(buffer, &(ppm_image->raster[row][col].blue));
+                col++;
+                break;
+            }
+            default:
+            {
+                break;
+            }
+            }
+            i++;
         }
-        switch (i)
-        {
-        case 0:
-        {
-            _get_next(buffer, &(ppm_image->raster[row][col].red));
-            break;
-        }
-        case 1:
-        {
-            _get_next(buffer, &(ppm_image->raster[row][col].green));
-            break;
-        }
-        case 2:
-        {
-            i = -1;
-            _get_next(buffer, &(ppm_image->raster[row][col].blue));
-            col++;
-            break;
-        }
-        default:
-        {
-            break;
-        }
-        }
-        i++;
     }
+    else if (P6 == ppm_image->magic_number)
+    {
+        if (256 > ppm_image->maxval)
+        {
+            /* If maxval is less than 256 a sample is represented by 1 byte */
+            int i = 0;
+            int row = 0;
+            int col = 0;
+            int next = 0; /* next character read from the file */
+
+            while (EOF != (next = fgetc(ppm_file)))
+            {
+                if (ppm_image->width == col)
+                {
+                    col = 0;
+                    row++;
+                    if (row == ppm_image->width)
+                    {
+                        break;
+                    }
+                }
+                switch (i)
+                {
+                case 0:
+                {
+                    ppm_image->raster[row][col].red = next;
+                    break;
+                }
+                case 1:
+                {
+                    ppm_image->raster[row][col].green = next;
+                    break;
+                }
+                case 2:
+                {
+                    i = -1;
+                    ppm_image->raster[row][col].blue = next;
+                    col++;
+                    break;
+                }
+                default:
+                {
+                    break;
+                }
+                }
+                i++;
+            }
+        } else {
+            /* If maxval is more than 256 a sample is represented by 2 bytes */
+
+            /* NOT YET SUPPORTED */
+
+            fprintf(logger_stream, "Error: 2-byte version (maxval>255) is not supported yet\n");
+            return PPM_ERR_GEN;
+        }
+    } else {
+        fprintf(logger_stream, "Error: unknown format: %d\n", (int)ppm_image->magic_number);
+        return PPM_ERR_PARAM;
+    }
+
     fclose(ppm_file);
-    return PPM_OK;
-}
-
-PPM_STATUS_t ppm_save_to_buffer(struct ppm_image *ppm_image, char *buffer)
-{
-    switch (ppm_image->magic_number)
-    {
-    case P3:
-    {
-        buffer[0] = 'P';
-        buffer[1] = '3';
-        break;
-    }
-    case P6:
-    {
-        buffer[0] = 'P';
-        buffer[1] = '6';
-        break;
-    }
-    default:
-    {
-        buffer[0] = 'P';
-        buffer[1] = '3';
-        break;
-    }
-    }
-    buffer[2] = WHITESPACE;
-    buffer[3] = COMMENT_CHAR;
-    int cursor = 4;
-    for (cursor = 4; cursor < 4 + strlen(ppm_image->initial_comment); cursor++)
-    {
-        buffer[cursor] = ppm_image->initial_comment[cursor - 4];
-    }
-    buffer[cursor++] = WHITESPACE;
-    _insert_int_to_str(buffer + cursor, ppm_image->width);
-    cursor += _strlen_int(ppm_image->width);
-    buffer[cursor++] = ' '; /*Exceptionally used space instead of new line to comply with gimp format*/
-    _insert_int_to_str(buffer + cursor, ppm_image->height);
-    cursor += _strlen_int(ppm_image->height);
-    buffer[cursor++] = WHITESPACE;
-    _insert_int_to_str(buffer + cursor, ppm_image->maxval);
-    cursor += _strlen_int(ppm_image->maxval);
-
-    for (int row = 0; row < ppm_image->height; row++)
-    {
-        for (int col = 0; col < ppm_image->width; col++)
-        {
-            buffer[cursor++] = WHITESPACE;
-            _insert_int_to_str(buffer + cursor, ppm_image->raster[row][col].red);
-            cursor += _strlen_int(ppm_image->raster[row][col].red);
-
-            buffer[cursor++] = WHITESPACE;
-            _insert_int_to_str(buffer + cursor, ppm_image->raster[row][col].green);
-            cursor += _strlen_int(ppm_image->raster[row][col].green);
-
-            buffer[cursor++] = WHITESPACE;
-            _insert_int_to_str(buffer + cursor, ppm_image->raster[row][col].blue);
-            cursor += _strlen_int(ppm_image->raster[row][col].blue);
-        }
-    }
-    buffer[cursor++] = END_CHAR;
     return PPM_OK;
 }
 

@@ -1,3 +1,7 @@
+/* 
+* Copyright (C) 2023  Lukasz Drzensla
+*/
+
 #ifndef _HLP_PPM_H
 #define _HLP_PPM_H
 

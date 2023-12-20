@@ -1,3 +1,25 @@
+/* 
+* Copyright (C) 2023  Lukasz Drzensla Ldrzensla@yahoo.com
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/*
+* Tiny PPM is an open source implementation of Portable Pixel Map
+* Based on specification from: https://netpbm.sourceforge.net/doc/ppm.html 
+*/
+
 #ifndef _PPM_H
 #define _PPM_H
 
@@ -33,8 +55,8 @@ enum {
 
 typedef enum ppm_magic
 {
-    P3 = 0,
-    P6 = 1
+    P3 = 0, //Plain PPM format
+    P6 = 1 //PPM format
 } ppm_magic;
 
 struct ppm_pixel {
@@ -44,7 +66,7 @@ struct ppm_pixel {
 };
 
 struct ppm_image{
-    /*Numbers in comments resemble the numbers from 'THE FORMAT' paragraph from https://netpbm.sourceforge.net/doc/ppm.html*/
+    /* Numbers in comments resemble the numbers from 'THE FORMAT' paragraph from https://netpbm.sourceforge.net/doc/ppm.html */
     ppm_magic magic_number; /*1*/
     char initial_comment [COMMENT_LINE_LEN+1];
     uint16_t width; /*3*/
@@ -59,12 +81,12 @@ struct ppm_image{
     PPM_STATUS_t (*set_filepath)(struct ppm_image* ppm_image, const char* filepath);
     PPM_STATUS_t (*destroy_raster)(struct ppm_image* ppm_image);
     PPM_STATUS_t (*init_raster)(struct ppm_image* ppm_image);
-    PPM_STATUS_t (*create_buffer)(struct ppm_image* ppm_image, char* dest_buffer);
     PPM_STATUS_t (*save_to_file)(struct ppm_image* ppm_image);
     PPM_STATUS_t (*set_pixel)(struct ppm_image* ppm_image, const int row, const int col, const uint16_t red, const uint16_t green, const uint16_t blue);
-    PPM_STATUS_t (*load_from_buffer)(struct ppm_image* ppm_image, char* buffer);
     PPM_STATUS_t (*load_from_file)(struct ppm_image* ppm_image);
 };
 
 struct ppm_image ppm_create(const ppm_magic magic_numer, const char* initial_comment, const uint16_t width, const uint16_t height, const uint16_t maxval);
-#endif /*_PPM_H*/
+struct ppm_image ppm_create_empty();
+
+#endif /* _PPM_H */
