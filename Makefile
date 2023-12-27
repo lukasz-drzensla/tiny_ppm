@@ -6,8 +6,8 @@ CC =
 CXX = 
 APP = 
 
-CFLAGS = -g -Wall -std=c17 -pedantic -Wunused -Werror
-CCOPTS = -g -Wall -std=c++20
+CFLAGS = -g -O0 -Wall -std=c17 -pedantic -Wunused -Werror -Wmissing-declarations
+CCOPTS = -g -O0 -Wall -std=c++20
 
 ifeq ($(PLATFORM), linux)
 	CC = gcc

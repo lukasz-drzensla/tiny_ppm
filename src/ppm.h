@@ -30,6 +30,17 @@
 
 void ppm_init_logger(void *restrict _logger_stream);
 
+/*perfectly fine changing these parameters*/
+enum {
+    COMMENT_LINE_LEN = 256,
+    FILEPATH_MAX_LEN = 255,
+    BUF_MAX_LEN = 65536,
+    LINE_MAX_LEN = 256
+};
+
+#define DEF_COMMENT_STR "Created by TinyPPM"
+
+/*DO NOT change these parameters*/
 typedef enum PPM_STATUS_t {
     PPM_OK = 0,
     PPM_ERR_IO = 1,
@@ -38,19 +49,10 @@ typedef enum PPM_STATUS_t {
     PPM_NOT_INIT = 4
 } PPM_STATUS_t;
 
-/*DO NOT change these parameters*/
 enum {
     MAGIC_NUMBER_LEN = 2,    
     UINT16_STR_LEN = 5,
     WHITESPACE_LEN = 1 
-};
-
-/*perfectly fine changing these parameters*/
-enum {
-    COMMENT_LINE_LEN = 256,
-    FILEPATH_MAX_LEN = 255,
-    BUF_MAX_LEN = 65536,
-    LINE_MAX_LEN = 256
 };
 
 typedef enum ppm_magic
