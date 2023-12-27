@@ -10,8 +10,8 @@ CFLAGS = -g -Wall -std=c17 -pedantic -Wunused -Werror
 CCOPTS = -g -Wall -std=c++20
 
 ifeq ($(PLATFORM), linux)
-	$(CC) = gcc
-	$(APP) = $(BUILD_DIR)/ppm
+	CC = gcc
+	APP = $(BUILD_DIR)/ppm
 endif
 
 ifeq ($(PLATFORM), windows)
@@ -65,6 +65,5 @@ $(LIB): $(LIB_OBJS)
 
 clean:
 	rm -rf $(BUILD_DIR)/*.o
-	rm $(BUILD_DIR)/LIB
-	rm $(BUILD_DIR)/bench
+	rm $(BUILD_DIR)/ppm
 

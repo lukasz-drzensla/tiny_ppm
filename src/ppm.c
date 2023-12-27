@@ -90,6 +90,11 @@ PPM_STATUS_t ppm_set_filepath(struct ppm_image *ppm_image, const char *filepath)
 
 PPM_STATUS_t ppm_destroy_raster(struct ppm_image *ppm_image)
 {
+    if (FALSE == ppm_image->_initialised)
+    {
+        return PPM_NOT_INIT;
+    }
+
     if (NULL == ppm_image)
     {
         return PPM_ERR_PARAM;
@@ -98,11 +103,6 @@ PPM_STATUS_t ppm_destroy_raster(struct ppm_image *ppm_image)
     if (NULL == ppm_image->raster)
     {
         return PPM_ERR_PARAM;
-    }
-
-    if (FALSE == ppm_image->_initialised)
-    {
-        return PPM_NOT_INIT;
     }
 
     for (int i = 0; i < ppm_image->height; i++)
@@ -330,7 +330,7 @@ PPM_STATUS_t ppm_save_to_file(struct ppm_image *ppm_image)
     }
     }
     buffer[2] = WHITESPACE;
-    if (0 < fputs(buffer, ppm_file))
+    if (0 > fputs(buffer, ppm_file))
     {
         return PPM_ERR_IO;
     }
@@ -342,7 +342,7 @@ PPM_STATUS_t ppm_save_to_file(struct ppm_image *ppm_image)
         buffer[cursor] = ppm_image->initial_comment[cursor - 1];
     }
     buffer[cursor++] = WHITESPACE;
-    if (0 < fputs(buffer, ppm_file))
+    if (0 > fputs(buffer, ppm_file))
     {
         return PPM_ERR_IO;
     }
@@ -357,7 +357,7 @@ PPM_STATUS_t ppm_save_to_file(struct ppm_image *ppm_image)
     _insert_int_to_str(buffer + cursor, ppm_image->maxval);
     cursor += _strlen_int(ppm_image->maxval);
     buffer[cursor++] = WHITESPACE;
-    if (0 < fputs(buffer, ppm_file))
+    if (0 > fputs(buffer, ppm_file))
     {
         return PPM_ERR_IO;
     }
@@ -380,7 +380,7 @@ PPM_STATUS_t ppm_save_to_file(struct ppm_image *ppm_image)
             cursor += _strlen_int(ppm_image->raster[row][col].blue);
             buffer[cursor++] = WHITESPACE;
 
-            if (0 < fputs(buffer, ppm_file))
+            if (0 > fputs(buffer, ppm_file))
             {
                 return PPM_ERR_IO;
             }
@@ -388,7 +388,7 @@ PPM_STATUS_t ppm_save_to_file(struct ppm_image *ppm_image)
     }
     memset(buffer, 0, LINE_MAX_LEN);
     buffer[0] = END_CHAR;
-    if (0 < fputs(buffer, ppm_file))
+    if (0 > fputs(buffer, ppm_file))
     {
         return PPM_ERR_IO;
     }
