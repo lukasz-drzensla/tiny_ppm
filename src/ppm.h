@@ -39,14 +39,17 @@ enum {
 };
 
 #define DEF_COMMENT_STR "Created by TinyPPM"
+#define IGN_WARN TRUE
 
 /*DO NOT change these parameters*/
+/* Warnings can co-exist with PPM_OK - to ignore warnings check only the 0-th bit or set IGN_WARN to TRUE*/
 typedef enum PPM_STATUS_t {
-    PPM_OK = 0,
-    PPM_ERR_IO = 1,
-    PPM_ERR_PARAM = 2,
-    PPM_ERR_GEN = 3,
-    PPM_NOT_INIT = 4
+    PPM_OK = 1,
+    PPM_ERR_IO = 2,
+    PPM_ERR_PARAM = 4,
+    PPM_ERR_GEN = 8,
+    PPM_ERR_NOT_INIT = 16,
+    PPM_WARN_TRIM = 32
 } PPM_STATUS_t;
 
 enum {
