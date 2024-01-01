@@ -1,5 +1,5 @@
 /* 
-* Copyright (C) 2023  Lukasz Drzensla
+* Copyright (C) 2023-2024  Lukasz Drzensla
 */
 
 #ifndef _HLP_STR_H

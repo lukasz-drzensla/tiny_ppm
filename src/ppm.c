@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023  Lukasz Drzensla
+ * Copyright (C) 2023-2024  Lukasz Drzensla
  */
 
 #include "ppm.h"
@@ -12,6 +12,9 @@ PPM_STATUS_t ppm_init_raster(struct ppm_image *ppm_image);
 PPM_STATUS_t ppm_save_to_file(struct ppm_image *ppm_image);
 PPM_STATUS_t ppm_set_pixel(struct ppm_image *ppm_image, const int row, const int col, const uint16_t red, const uint16_t green, const uint16_t blue);
 PPM_STATUS_t ppm_load_from_file(struct ppm_image *ppm_image);
+size_t ppm_get_size(struct ppm_image* ppm_image);
+
+
 PPM_STATUS_t ppm_write_hdr_section(char *buffer, FILE *ppm_file, struct ppm_image *ppm_image, int *cursor);
 struct ppm_pixel **ppm_create_raster(struct ppm_image *ppm_image);
 
@@ -21,6 +24,9 @@ void _ppm_create(struct ppm_image *ppm_image);
 
 FILE *logger_stream = NULL;
 
+/**
+ * @brief Redirect the logs to a stream. Useful for debugging the library.
+*/
 void ppm_init_logger(void *restrict _logger_stream)
 {
     logger_stream = (FILE *)_logger_stream;
@@ -35,6 +41,7 @@ inline void _ppm_create(struct ppm_image *ppm_image)
     ppm_image->save_to_file = &ppm_save_to_file;
     ppm_image->set_pixel = &ppm_set_pixel;
     ppm_image->load_from_file = &ppm_load_from_file;
+    ppm_image->get_size = &ppm_get_size;
 }
 
 struct ppm_image ppm_create(const ppm_magic magic_numer, const char *initial_comment, const uint16_t width, const uint16_t height, const uint16_t maxval)
@@ -599,4 +606,19 @@ PPM_STATUS_t ppm_set_pixel(struct ppm_image *ppm_image, const int row, const int
     ppm_image->raster[row][col].green = green;
     ppm_image->raster[row][col].blue = blue;
     return PPM_OK;
+}
+
+
+/**
+* @brief This function calculates the actual size of a ppm image. May differ from the final file size after saving to file by a byte (EOF).
+* @return Size of the ppm image (in bytes).
+*/
+size_t ppm_get_size(struct ppm_image* ppm_image)
+{
+    size_t size = 0;
+    size += sizeof(ppm_magic);
+    size += strlen(ppm_image->initial_comment)*sizeof(char);
+    size += ppm_image->maxval > 255 ? (3 * sizeof(uint16_t)) : (3 * sizeof(uint8_t));
+    size += ppm_image->maxval > 255 ? (sizeof(struct ppm_pixel**) + ppm_image->width * ppm_image->height * sizeof(struct ppm_pixel)) : (sizeof(struct ppm_pixel**) + ppm_image->width * ppm_image->height * sizeof(struct ppm_pixel) / 2);
+    return size;
 }
